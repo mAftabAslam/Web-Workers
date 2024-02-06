@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Processing Application</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <h1>Data Processing Application</h1>
+
+  <button onclick="performProcessingWithoutWorkers()">Process Without Workers</button>
+  <button onclick="performProcessingWithWorkers()">Process With Workers</button>
+  <button onclick="performProcessingWithTwoWorkers()">Process With Two Workers</button>
+  <button onclick="checkUIthread()">Check Main Thread Responding</button>
+  <div id="output"></div>
+
+  <script>
+    // Function to generate a random array
+    function generateRandomArray(size) {
+      const array = new Array(size);
+      for (let i = 0; i < size; i++) {
+        array[i] = Math.random();
+      }
+      return array;
+    }
+
+    function displayResult(result) {
+      document.getElementById('output').innerText = result;
+    }
+
+    function checkUIthread() {
+      alert("Main thread is responding!");
+    }
+
+    function performProcessingWithoutWorkers() {
+      const startTime = new Date().getTime();
+
+      const arraySize = 1000;
+      const array = generateRandomArray(arraySize);
+      array.sort();
+
+      const endTime = new Date().getTime();
+      const duration = endTime - startTime;
+
+      displayResult(`Processing without Web Workers took ${duration} milliseconds.`);
+    }
+
+    function performProcessingWithWorkers() {
+      const startTime = new Date().getTime();
+
+      const worker = new Worker('js/worker.js');
+
+      worker.onmessage = function (event) {
+        const endTime = new Date().getTime();
+        const duration = endTime - startTime;
+
+        displayResult(`Processing with Web Workers took ${duration} milliseconds.`);
+      };
+
+      worker.postMessage({ arraySize: 1000 });
+    }
+
+    function performProcessingWithTwoWorkers() {
+      const startTime = new Date().getTime();
+
+      const worker1 = new Worker('js/worker.js');
+      const worker2 = new Worker('js/worker.js');
+
+      
+      const arraySize = 1000; 
+      
+      const midIndex = arraySize / 2;
+      const array1 = generateRandomArray(midIndex);
+      const array2 = generateRandomArray(midIndex);
+
+      worker1.onmessage = worker2.onmessage = function (event) {
+      
+        if (event.data.worker === 2) {
+          const endTime = new Date().getTime();
+          const duration = endTime - startTime;
+          displayResult(`Processing with Two Web Workers took ${duration} milliseconds.`);
+        }
+      };
+
+      
+      worker1.postMessage({ array: array1, worker: 1 });
+      worker2.postMessage({ array: array2, worker: 2 });
+    }
+  </script>
+</body>
+</html>
